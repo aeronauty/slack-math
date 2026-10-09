@@ -3,6 +3,11 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 const { execFileSync } = require('node:child_process');
 const version = 'v24.21.0';
+// Pinned from the GPG-signed SHASUMS256.txt.asc, so a compromised host cannot serve matching checksums.
+const sums = {
+  arm64: 'bed7eea5325e1108f32ce5228ddd6a5f0f08a499ee42aa7442aea583702f6057',
+  x64: '1462cb3b3046b815cf8ea436d3da450ec1a9f11dac7e5a46b0ada5305d7e8097'
+};
 async function runtime(arch) {
   if (!['arm64', 'x64'].includes(arch)) throw Error('Unsupported architecture.');
   const root = path.join(__dirname, '.runtime');
@@ -12,10 +17,7 @@ async function runtime(arch) {
   if (fs.existsSync(path.join(folder, 'bin/node'))) return folder;
   const file = name + '.tar.gz';
   const base = `https://nodejs.org/dist/${version}/`;
-  const sums = await fetch(base + 'SHASUMS256.txt');
-  if (!sums.ok) throw Error('Cannot fetch Node checksums.');
-  const expected = (await sums.text()).split('\n').find(line => line.endsWith('  ' + file))?.split(' ')[0];
-  if (!expected) throw Error('Node archive checksum was not published.');
+  const expected = sums[arch];
   const response = await fetch(base + file);
   if (!response.ok) throw Error('Cannot download bundled Node runtime.');
   const archive = Buffer.from(await response.arrayBuffer());

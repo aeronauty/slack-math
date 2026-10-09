@@ -10,6 +10,20 @@ async function download(url, expected, output) {
   fs.mkdirSync(path.dirname(output), { recursive: true });
   fs.writeFileSync(output, data);
 }
+// Pinned in the repo so a compromised download host cannot also serve matching checksums.
+// Node: from the GPG-signed SHASUMS256.txt.asc. Zig: from index.json, minisign-checked.
+const zigSums = {
+  'x86_64-macos': '375b6909fc1495d16fc2c7db9538f707456bfc3373b14ee83fdd3e22b3d43f7f',
+  'aarch64-macos': '3cc2bab367e185cdfb27501c4b30b1b0653c28d9f73df8dc91488e66ece5fa6b',
+  'x86_64-linux': '02aa270f183da276e5b5920b1dac44a63f1a49e55050ebde3aecc9eb82f93239',
+  'aarch64-linux': '958ed7d1e00d0ea76590d27666efbf7a932281b3d7ba0c6b01b0ff26498f667f',
+  'x86_64-windows': '3a0ed1e8799a2f8ce2a6e6290a9ff22e6906f8227865911fb7ddedc3cc14cb0c',
+  'aarch64-windows': 'b926465f8872bf983422257cd9ec248bb2b270996fbe8d57872cca13b56fc370'
+};
+const nodeSums = {
+  x64: '158f7685b44de51f6c0df1d153526cbcd3e1bc739a8dfc607721cef75de9e541',
+  arm64: '8779b1bde1d39f8d420e3b57aa657b39891af434d3de44a919044cec06785921'
+};
 async function zig() {
   const version = '0.15.2';
   const cpu = process.arch === 'arm64' ? 'aarch64' : 'x86_64';
@@ -18,10 +32,9 @@ async function zig() {
   const dir = path.join(root, `zig-${key}-${version}`);
   const binary = path.join(dir, process.platform === 'win32' ? 'zig.exe' : 'zig');
   if (fs.existsSync(binary)) return binary;
-  const index = await (await fetch('https://ziglang.org/download/index.json')).json();
-  const asset = index[version][key];
-  const archive = path.join(root, path.basename(asset.tarball));
-  await download(asset.tarball, asset.shasum, archive);
+  const file = `zig-${key}-${version}.${process.platform === 'win32' ? 'zip' : 'tar.xz'}`;
+  const archive = path.join(root, file);
+  await download(`https://ziglang.org/download/${version}/${file}`, zigSums[key], archive);
   if (process.platform === 'win32') execFileSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', 'Expand-Archive -LiteralPath $env:SLACK_MATH_ARCHIVE -DestinationPath $env:SLACK_MATH_EXTRACT -Force'], {env:{...process.env,SLACK_MATH_ARCHIVE:archive,SLACK_MATH_EXTRACT:root}});
   else execFileSync('/usr/bin/tar', ['-xf', archive, '-C', root]);
   fs.unlinkSync(archive);
@@ -34,13 +47,9 @@ async function runtime(arch) {
   const root = path.join(__dirname, '.runtime');
   const dir = path.join(root, name);
   if (fs.existsSync(path.join(dir, 'node.exe'))) return dir;
-  const base = `https://nodejs.org/dist/${version}/`;
-  const sums = await (await fetch(base + 'SHASUMS256.txt')).text();
   const file = name + '.zip';
-  const expected = sums.split('\n').find(line => line.endsWith('  ' + file))?.split(' ')[0];
-  if (!expected) throw Error('Node checksum missing.');
   const archive = path.join(root, file);
-  await download(base + file, expected, archive);
+  await download(`https://nodejs.org/dist/${version}/${file}`, nodeSums[arch], archive);
   fs.mkdirSync(dir, { recursive: true });
   if (process.platform === 'win32') execFileSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', 'Expand-Archive -LiteralPath $env:SLACK_MATH_ARCHIVE -DestinationPath $env:SLACK_MATH_EXTRACT -Force'], {env:{...process.env,SLACK_MATH_ARCHIVE:archive,SLACK_MATH_EXTRACT:root}});
   else for (const item of ['node.exe', 'LICENSE']) fs.writeFileSync(path.join(dir, item), execFileSync('/usr/bin/unzip', ['-p', archive, `${name}/${item}`], { maxBuffer: 256 * 1024 * 1024 }));
