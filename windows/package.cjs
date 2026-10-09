@@ -16,6 +16,8 @@ async function build(arch) {
   fs.copyFileSync(path.join(project, 'LICENSE'), path.join(resources, 'LICENSE.txt'));
   const target = arch === 'arm64' ? 'aarch64-windows-gnu' : 'x86_64-windows-gnu';
   execFileSync(compiler,['cc','-target',target,'-O2','-Wall','-Wextra','-municode','-Wl,--subsystem,windows',path.join(__dirname,'SlackMath.c'),'-o',path.join(output,'Slack Math.exe'),'-luser32','-lgdi32','-lcomdlg32'],{stdio:'inherit'});
+  // Debug symbols can embed the builder's local paths; ship only runtime files.
+  for (const file of fs.readdirSync(output)) if (file.endsWith('.pdb')) fs.rmSync(path.join(output,file));
   const zip = path.join(project,'dist',`Slack-Math-0.3.0-windows-${arch}.zip`);
   fs.rmSync(zip,{force:true});
   if (process.platform === 'win32') {
