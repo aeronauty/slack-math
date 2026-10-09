@@ -10,11 +10,12 @@ const assert = require('node:assert/strict');
   const quit = path.join(root, 'quit');
   const electron = require('electron');
   fs.writeFileSync(path.join(root, 'package.json'), JSON.stringify({main:'fixture.cjs'}));
+  // The doctype matters: in quirks mode KaTeX refuses to render.
   fs.writeFileSync(path.join(root, 'fixture.cjs'), `
     const {app,BrowserWindow,session}=require('electron');
     const fs=require('node:fs');
     app.whenReady().then(async()=>{
-      session.defaultSession.protocol.handle('https',()=>new Response(${JSON.stringify('<html><body><div class="c-message_kit__text">The energy is \\(E=mc^2\\).</div></body></html>')},{headers:{'content-type':'text/html'}}));
+      session.defaultSession.protocol.handle('https',()=>new Response(${JSON.stringify('<!doctype html><html><body><div class="c-message_kit__text">The energy is \\(E=mc^2\\).</div></body></html>')},{headers:{'content-type':'text/html'}}));
       const view=new BrowserWindow({show:false,webPreferences:{sandbox:true}});
       await view.loadURL('https://app.slack.com/client/math-test');
       setInterval(async()=>{
@@ -38,7 +39,7 @@ const assert = require('node:assert/strict');
   async function until(check,label) {
     const end=Date.now()+45000;
     while(Date.now()<end){if(check())return;const error=states.find(x=>x.state==='error');if(error)throw Error(error.detail);if(exited)throw Error('Worker exited: '+label);await new Promise(r=>setTimeout(r,100));}
-    throw Error('Timed out: '+label);
+    throw Error('Timed out: '+label+' '+JSON.stringify({states,dom:dom()}));
   }
   const dom=()=>{try{return JSON.parse(fs.readFileSync(status))}catch{return {}}};
   try {
