@@ -1,0 +1,12 @@
+node_modules/
+dist/
+extension/
+desktop-payload.js
+macos/.runtime/
+macos/*.icns
+macos/*.iconset/
+windows/.runtime/
+windows/.tools/
+*.zip
+.DS_Store
+preview.png

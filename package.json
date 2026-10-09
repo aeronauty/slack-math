@@ -1,0 +1,19 @@
+{
+  "name": "slack-math",
+  "version": "0.3.0",
+  "private": true,
+  "scripts": {
+    "build": "node build.cjs",
+    "test": "node --test test.cjs pipe-test.cjs platform-test.cjs",
+    "package:mac": "npm run build && node macos/package.cjs",
+    "test:native": "node native-smoke.cjs",
+    "package:windows": "npm run build && node windows/package.cjs"
+  },
+  "dependencies": {
+    "katex": "0.19.0"
+  },
+  "devDependencies": {
+    "jsdom": "26.1.0"
+  },
+  "license": "MIT"
+}

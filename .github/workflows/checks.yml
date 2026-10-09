@@ -1,0 +1,30 @@
+name: Checks
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run build
+      - run: npm test
+      - if: runner.os == 'Windows'
+        run: node windows/package.cjs x64
+      - if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $p = Start-Process -FilePath 'dist/windows/x64/Slack Math/Slack Math.exe' -ArgumentList '--self-test' -PassThru -Wait
+          if ($p.ExitCode -ne 0) { throw 'Launcher self-test failed' }
+      - if: runner.os == 'Windows'
+        run: npm install --no-save --package-lock=false electron@39.0.0
+      - if: runner.os == 'Windows'
+        run: node windows/native-test.cjs

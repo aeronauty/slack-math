@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "Slack Inline LaTeX",
+  "version": "0.1.0",
+  "description": "Typeset inline LaTeX math in Slack messages, locally.",
+  "content_scripts": [{
+    "matches": ["https://app.slack.com/*"],
+    "js": ["vendor/katex.min.js", "math.js", "content.js"],
+    "css": ["vendor/katex.min.css", "style.css"],
+    "run_at": "document_idle"
+  }],
+  "web_accessible_resources": [{
+    "resources": ["vendor/fonts/*"],
+    "matches": ["https://app.slack.com/*"]
+  }]
+}

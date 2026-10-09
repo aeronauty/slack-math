@@ -1,0 +1,33 @@
+const { test } = require('node:test');
+const assert = require('node:assert/strict');
+const { EventEmitter } = require('node:events');
+const { PassThrough } = require('node:stream');
+const { connectPipe, isSlackTarget } = require('./pipe-cdp.cjs');
+test('only inject Slack pages', () => {
+  for (const url of ['https://app.slack.com/client/T/C', 'https://team.slack.com/']) assert.equal(isSlackTarget({ type: 'page', url }), true);
+  for (const url of ['https://slack.com.evil.test/', 'https://evilslack.com', 'file:///tmp/page', 'http://app.slack.com', 'about:blank']) assert.equal(isSlackTarget({ type: 'page', url }), false);
+  assert.equal(isSlackTarget({ type: 'worker', url: 'https://app.slack.com' }), false);
+});
+test('private pipe handles fragmented frames, sessions, errors, and disconnect', async () => {
+  const child = new EventEmitter();
+  child.stdio = [null, null, null, new PassThrough(), new PassThrough()];
+  const cdp = connectPipe(child);
+  let sent;
+  child.stdio[3].on('data', data => { sent = JSON.parse(data.toString().slice(0, -1)); });
+  const first = cdp.call('Runtime.evaluate', { expression: '1+1' }, 'session-1');
+  assert.equal(sent.sessionId, 'session-1');
+  const reply = JSON.stringify({ id: sent.id, result: { value: 'ρ' } }) + '\0';
+  const bytes = Buffer.from(reply);
+  const split = bytes.indexOf(Buffer.from('ρ')) + 1;
+  child.stdio[4].write(bytes.subarray(0, split));
+  child.stdio[4].write(bytes.subarray(split));
+  assert.deepEqual(await first, { value: 'ρ' });
+  const failed = cdp.call('Bad.command');
+  child.stdio[4].write(JSON.stringify({ id: sent.id, error: { message: 'Unsupported' } }) + '\0');
+  await assert.rejects(failed, /Unsupported/);
+  const pending = cdp.call('Never.returns');
+  child.emit('exit');
+  await assert.rejects(pending, /closed/);
+  assert.equal(cdp.open, false);
+  cdp.close();
+});
