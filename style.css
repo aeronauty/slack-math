@@ -2,3 +2,5 @@
 .slack-inline-math .katex { font-size: 1.05em; }
 .slack-inline-math .katex-display { overflow-x: auto; overflow-y: hidden; padding: .2em 0; }
 code.slack-math-code { background: transparent; border: 0; padding: 0; color: inherit; }
+/* Untrusted TeX can shift content (e.g. repeated negative \kern) over sender names; keep it inside each formula line. */
+.slack-inline-math .katex-base { overflow: clip; }

@@ -62,7 +62,8 @@ static DWORD WINAPI readWorker(LPVOID argument) {
                     char text[8192];
                     stringField(line, "state", update->state, sizeof(update->state));
                     stringField(line, "detail", text, sizeof(text));
-                    MultiByteToWideChar(CP_UTF8, 0, text, -1, update->detail, 2048);
+                    // One short of the buffer: on overflow the call can write partially, and calloc left the last slot zero.
+                    MultiByteToWideChar(CP_UTF8, 0, text, -1, update->detail, 2047);
                     if (!PostMessageW(window, STATUS_UPDATE, 0, (LPARAM)update)) free(update);
                 }
                 used = 0;

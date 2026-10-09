@@ -89,6 +89,14 @@ test('oversized and expanding input stays bounded', () => {
   dom.window.close();
 });
 
+test('formulas cannot paint over neighbouring content', () => {
+  // Kerns are bounded individually by maxSize, not in total, so the clip in style.css is what contains them.
+  const dom = page('<div class="p-rich_text_block">\\(' + '\\kern{-20em}'.repeat(50) + 'X\\)</div>');
+  assert.ok(dom.window.document.querySelector('.slack-inline-math .katex-base'), 'KaTeX renamed .katex-base; update style.css');
+  assert.match(fs.readFileSync(__dirname + '/style.css', 'utf8'), /\.slack-inline-math \.katex-base \{ overflow: clip; \}/);
+  dom.window.close();
+});
+
 test('turning math off restores source and stops rendering', async () => {
   const dom = page('<div class="p-rich_text_block">Value <code>\\(x_i\\)</code></div>');
   const doc = dom.window.document;
