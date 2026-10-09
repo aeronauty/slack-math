@@ -22,6 +22,7 @@ async function build(arch) {
   fs.copyFileSync(path.join(node, 'LICENSE'), path.join(resources, 'Node-LICENSE.txt'));
   fs.copyFileSync(path.join(project, 'node_modules/katex/LICENSE'), path.join(resources, 'KaTeX-LICENSE.txt'));
   fs.copyFileSync(path.join(project, 'README.md'), path.join(resources, 'README.md'));
+  fs.copyFileSync(path.join(project, 'LICENSE'), path.join(resources, 'LICENSE.txt'));
   const target = arch === 'arm64' ? 'arm64-apple-macos13.5' : 'x86_64-apple-macos13.5';
   execFileSync('/usr/bin/xcrun', ['swiftc', '-O', '-target', target, path.join(__dirname, 'SlackMath.swift'), '-o', path.join(contents, 'MacOS', 'Slack Math')], { stdio: 'inherit' });
   fs.writeFileSync(path.join(contents, 'Info.plist'), `<?xml version="1.0" encoding="UTF-8"?>

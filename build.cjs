@@ -2,7 +2,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const out = path.join(__dirname, 'extension');
 fs.mkdirSync(path.join(out, 'vendor'), { recursive: true });
-for (const file of ['manifest.json', 'content.js', 'math.js', 'style.css']) {
+for (const file of ['manifest.json', 'content.js', 'math.js', 'style.css', 'LICENSE']) {
   fs.copyFileSync(path.join(__dirname, file), path.join(out, file));
 }
 for (const file of ['katex.min.js', 'katex.min.css', 'fonts']) {

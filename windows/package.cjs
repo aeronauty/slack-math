@@ -13,6 +13,7 @@ async function build(arch) {
   fs.copyFileSync(path.join(node,'LICENSE'),path.join(resources,'Node-LICENSE.txt'));
   fs.copyFileSync(path.join(project,'node_modules/katex/LICENSE'),path.join(resources,'KaTeX-LICENSE.txt'));
   fs.copyFileSync(path.join(project,'README.md'),path.join(output,'README.md'));
+  fs.copyFileSync(path.join(project, 'LICENSE'), path.join(resources, 'LICENSE.txt'));
   const target = arch === 'arm64' ? 'aarch64-windows-gnu' : 'x86_64-windows-gnu';
   execFileSync(compiler,['cc','-target',target,'-O2','-Wall','-Wextra','-municode','-Wl,--subsystem,windows',path.join(__dirname,'SlackMath.c'),'-o',path.join(output,'Slack Math.exe'),'-luser32','-lgdi32','-lcomdlg32'],{stdio:'inherit'});
   const zip = path.join(project,'dist',`Slack-Math-0.3.0-windows-${arch}.zip`);
